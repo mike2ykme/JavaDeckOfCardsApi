@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,7 +30,7 @@ public class DeckService {
         final Deck deck = this.allDecks.get(deckId);
 
         if (deck == null)
-            return Map.of(Constants.DECK_ID, deckId, Constants.STATUS, "failure", Constants.ERROR, "no deck found");
+            return noDeck(deckId);
 
         List<Card> cards = deck.drawCards(Integer.parseInt(count));
 
@@ -46,7 +47,7 @@ public class DeckService {
         final Deck deck = this.allDecks.get(deckId);
 
         if (deck == null)
-            return Map.of(Constants.DECK_ID, deckId, Constants.STATUS, "failure", Constants.ERROR, "no deck found");
+            return noDeck(deckId);
 
         final List<Card> cards = deck.peekCard(Integer.parseInt(count));
 
@@ -66,11 +67,84 @@ public class DeckService {
                 Constants.REMAINING_CARDS, Integer.toString(deck.cardsRemaining()));
     }
 
+    public static Map<String, Object> noDeck(String deckId) {
+        return Map.of(Constants.DECK_ID, deckId, Constants.STATUS, "failure", Constants.ERROR, "no deck found");
+    }
+
     public Map<String, Object> shuffleDeck(String deckId) {
         final Deck deck = this.allDecks.get(deckId);
 
         if (deck == null)
-            return Map.of(Constants.DECK_ID, deckId, Constants.STATUS, "failure", Constants.ERROR, "no deck found");
+            return noDeck(deckId);
+
+        deck.shuffle();
+        this.allDecks.put(deck.getId(), deck);
+
+        return Map.of(Constants.DECK_ID, deckId,
+                Constants.STATUS, "success",
+                Constants.REMAINING_CARDS, Integer.toString(deck.cardsRemaining()));
+    }
+
+    public Map<String, Object> addPileToDeck(String deckId, String pileName, Optional<String> cards, boolean shuffle) {
+        final Deck deck = this.allDecks.get(deckId);
+
+        if (deck == null)
+            return noDeck(deckId);
+
+        final boolean b = deck.newDeckPile(pileName, cards, shuffle);
+        final List<Card> pile = deck.getPile(pileName);
+        return Map.of(Constants.DECK_ID, deckId,
+                Constants.STATUS, Constants.SUCCESS,
+                Constants.REMAINING_CARDS, Integer.toString(deck.cardsRemaining()),
+                Constants.PILES, Map.of(
+                        pileName, Map.of(
+                                Constants.STATUS, Boolean.toString(b),
+                                Constants.REMAINING_CARDS, Integer.toString(pile.size())
+                        )
+                )
+        );
+
+    }
+
+    public Map<String, Object> shufflePile(String deckId, String pileName) {
+        final Deck deck = this.allDecks.get(deckId);
+        if (deck == null)
+            return noDeck(deckId);
+
+        boolean shuffled = deck.shufflePile(pileName);
+
+        return Map.of(Constants.DECK_ID, deckId,
+                Constants.STATUS, Constants.SUCCESS,
+                Constants.REMAINING_CARDS, Integer.toString(deck.cardsRemaining()),
+                Constants.PILES, Map.of(
+                        pileName, Map.of(
+                                Constants.STATUS, Constants.SUCCESS,
+                                Constants.SHUFFLED, Boolean.toString(shuffled)
+                        )
+                )
+        );
+    }
+
+    public Map<String, Object> allPiles(String deckId) {
+        final Deck deck = this.allDecks.get(deckId);
+
+        if (deck == null)
+            return noDeck(deckId);
+
+//        final List<String> allPileNames = deck.getAllPileNames();
+
+        return Map.of(
+                Constants.DECK_ID, deckId,
+                Constants.PILES, deck.getAllPileNames()
+        );
+    }
+}
+/*
+public Map<String, Object> shuffleDeck(String deckId) {
+        final Deck deck = this.allDecks.get(deckId);
+
+        if (deck == null)
+            return noDeck(deckId);
 
         deck.shuffle();
         this.allDecks.put(deck.getId(),deck);
@@ -79,4 +153,4 @@ public class DeckService {
                 Constants.STATUS, "success",
                 Constants.REMAINING_CARDS, Integer.toString(deck.cardsRemaining()));
     }
-}
+ */

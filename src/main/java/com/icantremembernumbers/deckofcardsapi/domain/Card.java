@@ -10,15 +10,18 @@ import lombok.ToString;
 public class Card {
     private final CardValue value;
     private final CardSuite suite;
+    private final String shortCode;
 
     public Card(CardValue value, CardSuite suite) {
         this.value = value;
         this.suite = suite;
+        this.shortCode = imageCode();
     }
 
     public Card(String value, String suite) {
         this.value = CardValue.get(value);
         this.suite = CardSuite.get(suite);
+        this.shortCode = imageCode();
     }
 
     public String imageCode() {

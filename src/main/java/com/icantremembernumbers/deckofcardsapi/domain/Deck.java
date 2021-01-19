@@ -2,6 +2,7 @@ package com.icantremembernumbers.deckofcardsapi.domain;
 
 import org.springframework.lang.Nullable;
 
+import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,15 +32,15 @@ public class Deck {
 
     }
 
-    synchronized private List<Card> getPile(String name) {
+    public synchronized List<Card> getPile(String name) {
         return this.allPiles.get(name);
     }
 
     synchronized @Nullable
     public Card getCard() {
         if (cardsRemaining() > 0) {
-            final Card removed = getPile(REMAINING_CARDS).remove(0);//remainingCards.remove(0);
-            getPile(DISCARDED_CARDS).add(removed); //            this.discardedCards.add(removed);
+            final Card removed = getPile(REMAINING_CARDS).remove(0);
+            getPile(DISCARDED_CARDS).add(removed);
             return removed;
         }
 
@@ -60,7 +61,7 @@ public class Deck {
         if (cardsRemaining() >= i) {
             List<Card> cards = new ArrayList<>();
             for (int j = 0; j < i; j++) {
-                cards.add(getPile(REMAINING_CARDS).get(i));
+                cards.add(getPile(REMAINING_CARDS).get(j));
             }
             return cards;
         }
@@ -116,6 +117,14 @@ public class Deck {
         return true;
     }
 
+    synchronized public boolean newDeckPile(String pileName, Optional<String> cards, boolean shuffled) {
+        if (cards.isPresent()) {
+            final String[] split = cards.get().split(",");
+            return newDeckPile(pileName, split, shuffled);
+        }
+        return newDeckPile(pileName, shuffled);
+    }
+
     private static Card stringToCard(String s) {
         final String upperCased = s.toUpperCase();
         final String value = upperCased.substring(0, 1);
@@ -125,5 +134,20 @@ public class Deck {
 
     synchronized public boolean containsPile(String pileName) {
         return allPiles.containsKey(pileName);
+    }
+
+    synchronized public boolean shufflePile(String pileName) {
+        if (containsPile(pileName)) {
+            Collections.shuffle(allPiles.get(pileName));
+            return true;
+        }
+        return false;
+    }
+
+    synchronized public List<String> getAllPileNames() {
+        return allPiles.entrySet()
+                .stream()
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 }

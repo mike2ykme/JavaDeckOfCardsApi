@@ -8,4 +8,6 @@ public class Constants {
     public static final String DECK_ID = "deckId";
     public static final String SUCCESS = "success";
     public static final String SHUFFLED = "shuffled";
+    public static final String PILES = "piles";
+    public static final String TRUE = "true";
 }
