@@ -16,7 +16,12 @@ public class Card {
         this.suite = suite;
     }
 
-    public String imageCode(){
+    public Card(String value, String suite) {
+        this.value = CardValue.get(value);
+        this.suite = CardSuite.get(suite);
+    }
+
+    public String imageCode() {
         return this.value.value + this.suite.suite;
     }
 

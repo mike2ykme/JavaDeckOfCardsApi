@@ -6,6 +6,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -59,10 +60,13 @@ class DeckTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testShuffleAgain() {
-        List<Card> remainingCards = (List<Card>) ReflectionTestUtils.getField(shuffled, Deck.class, "remainingCards");
-        List<Card> oldRemainingCards = new ArrayList<>(remainingCards);
+//        List<Card> remainingCards = (List<Card>) ReflectionTestUtils.getField(shuffled, Deck.class, "remainingCards");
+        Map<String,List<Card>> allPiles = (Map<String,List<Card>>) ReflectionTestUtils.getField(shuffled, Deck.class, "allPiles");
+//        List<Card> remainingCards = (List<Card>) ReflectionTestUtils.getField(shuffled, Deck.class, "remainingCards");
+        List<Card> oldRemainingCards = new ArrayList<>(allPiles.get(Deck.REMAINING_CARDS));
         shuffled.shuffle();
-        remainingCards = (List<Card>) ReflectionTestUtils.getField(shuffled, Deck.class, "remainingCards");
+//        remainingCards = (List<Card>) ReflectionTestUtils.getField(shuffled, Deck.class, "remainingCards");
+        List<Card> remainingCards = allPiles.get(Deck.REMAINING_CARDS);
 
         assertNotEquals(oldRemainingCards, remainingCards);
     }
@@ -75,5 +79,25 @@ class DeckTest {
         assertThat(drawnCards).contains(new Card(CardValue.ACE, CardSuite.CLUBS), new Card(CardValue.TWO, CardSuite.CLUBS));
         assertNotNull(drawnCards);
         assertNull(overDraw);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testAddNewDeckPile(){
+        String TEST_ADD_PILE = "TEST_ADD_PILE";
+        String TEST_ADD_PILE_SUBSET = "TEST_ADD_PILE_SUBSET";
+//        final Deck shuffledDeck = Deck.newShuffledDeck("TEST_ADD_PILE");
+
+        boolean result = shuffled.newDeckPile(TEST_ADD_PILE, false);
+        assertTrue(shuffled.containsPile(TEST_ADD_PILE));
+
+        boolean result1 = shuffled.newDeckPile(TEST_ADD_PILE_SUBSET,new String[]{"AH","QH"}, true);
+        assertTrue(shuffled.containsPile(TEST_ADD_PILE_SUBSET));
+
+        final Map<String,List<Card>> allPiles = (Map<String,List<Card>>) ReflectionTestUtils.getField(shuffled, Deck.class, "allPiles");
+        final List<Card> cards = allPiles.get(TEST_ADD_PILE_SUBSET);
+        assertTrue(cards.size() ==2);
+        assertThat(cards).contains(new Card(CardValue.ACE,CardSuite.HEARTS),new Card(CardValue.QUEEN,CardSuite.HEARTS));
+
     }
 }

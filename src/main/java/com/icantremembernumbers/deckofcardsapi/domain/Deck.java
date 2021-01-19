@@ -3,39 +3,43 @@ package com.icantremembernumbers.deckofcardsapi.domain;
 import org.springframework.lang.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Deck {
+    public static final String DISCARDED_CARDS = "discardedCards";
+    public static final String REMAINING_CARDS = "remainingCards";
     private final String id;
-    private final List<Card> remainingCards;// = new ArrayList<>(52);
-    private final List<Card> discardedCards = new ArrayList<>(52);
     private final HashMap<String, List<Card>> allPiles = new HashMap<>();
 
     private Deck(List<Card> remainingCards, String id) {
         this.id = id;
-        this.remainingCards = remainingCards;
+        this.allPiles.put(REMAINING_CARDS, remainingCards);
+        this.allPiles.put(DISCARDED_CARDS, new ArrayList<>(52));
     }
 
     public static Deck newUnshuffledDeck(String id) {
-        var deck = new Deck(AllCards.baseDeck(), id);
-        return deck;
+        return new Deck(AllCards.baseDeck(), id);
     }
 
     public static Deck newShuffledDeck(String id) {
-        var deck = new Deck(AllCards.shuffledDeck(), id);
-        return deck;
+        return new Deck(AllCards.shuffledDeck(), id);
     }
 
 
     synchronized public int cardsRemaining() {
-        return this.remainingCards.size();
+        return getPile(REMAINING_CARDS).size();
 
+    }
+
+    synchronized private List<Card> getPile(String name) {
+        return this.allPiles.get(name);
     }
 
     synchronized @Nullable
     public Card getCard() {
         if (cardsRemaining() > 0) {
-            final Card removed = remainingCards.remove(0);
-            this.discardedCards.add(removed);
+            final Card removed = getPile(REMAINING_CARDS).remove(0);//remainingCards.remove(0);
+            getPile(DISCARDED_CARDS).add(removed); //            this.discardedCards.add(removed);
             return removed;
         }
 
@@ -45,7 +49,8 @@ public class Deck {
     synchronized @Nullable
     public Card peekCard() {
         if (cardsRemaining() > 0)
-            return this.remainingCards.get(0);
+            return getPile(REMAINING_CARDS).get(0);
+//            return this.remainingCards.get(0);
 
         return null;
     }
@@ -55,7 +60,7 @@ public class Deck {
         if (cardsRemaining() >= i) {
             List<Card> cards = new ArrayList<>();
             for (int j = 0; j < i; j++) {
-                cards.add(this.remainingCards.get(i));
+                cards.add(getPile(REMAINING_CARDS).get(i));
             }
             return cards;
         }
@@ -64,13 +69,13 @@ public class Deck {
 
     synchronized @Nullable
     public Card getLastDiscard() {
-        if (this.discardedCards.size() > 0)
-            return this.discardedCards.get(discardedCards.size() - 1);
+        if (getPile(DISCARDED_CARDS).size() > 0)
+            return getPile(DISCARDED_CARDS).get(getPile(DISCARDED_CARDS).size() - 1);
         return null;
     }
 
     synchronized public void shuffle() {
-        Collections.shuffle(remainingCards, new Random(System.currentTimeMillis()));
+        Collections.shuffle(getPile(REMAINING_CARDS), new Random(System.currentTimeMillis()));
     }
 
     public String getId() {
@@ -87,5 +92,38 @@ public class Deck {
             return cards;
         }
         return null;
+    }
+
+    synchronized public boolean newDeckPile(String pileName, boolean shuffled) {
+
+        allPiles.put(pileName, shuffled
+                ? AllCards.shuffledDeck()
+                : AllCards.baseDeck()
+        );
+        return true;
+    }
+
+    synchronized public boolean newDeckPile(String pileName, String[] cardSubset, boolean shuffled) {
+        final List<Card> filteredSubsetofCards = Arrays.stream(cardSubset)
+                .filter(s -> s.length() == 2)
+                .map(Deck::stringToCard)
+                .collect(Collectors.toList());
+        if (shuffled)
+            Collections.shuffle(filteredSubsetofCards, new Random(System.currentTimeMillis()));
+
+        allPiles.put(pileName, filteredSubsetofCards);
+
+        return true;
+    }
+
+    private static Card stringToCard(String s) {
+        final String upperCased = s.toUpperCase();
+        final String value = upperCased.substring(0, 1);
+        final String suite = upperCased.substring(1, 2);
+        return new Card(value, suite);
+    }
+
+    synchronized public boolean containsPile(String pileName) {
+        return allPiles.containsKey(pileName);
     }
 }
