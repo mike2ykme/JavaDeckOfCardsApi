@@ -150,4 +150,33 @@ public class Deck {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
+
+    synchronized @Nullable
+    public List<Card> peekPile(String pileName, Optional<Integer> count) {
+        final List<Card> pile = getPile(pileName);
+        int cardCount = count.isPresent() ? count.get() : 1;
+
+        if (pile != null && pile.size() >= cardCount) {
+            final List<Card> cards = new ArrayList<>(cardCount);
+            for (int j = 0; j < cardCount; j++) {
+                cards.add(pile.get(j));
+            }
+            return cards;
+        }
+        return null;
+    }
+
+    public synchronized @Nullable List<Card> drawPile(String pileName, Optional<Integer> count) {
+        final List<Card> pile = getPile(pileName);
+        int cardCount = count.isPresent() ? count.get() : 1;
+
+        if (pile != null && pile.size() >= cardCount) {
+            final List<Card> cards = new ArrayList<>(cardCount);
+            for (int j = 0; j < cardCount; j++) {
+                cards.add(pile.remove(0));
+            }
+            return cards;
+        }
+        return null;
+    }
 }

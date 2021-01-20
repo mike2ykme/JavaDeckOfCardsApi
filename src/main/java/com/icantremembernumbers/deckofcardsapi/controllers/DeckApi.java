@@ -1,12 +1,13 @@
 package com.icantremembernumbers.deckofcardsapi.controllers;
 
-import com.icantremembernumbers.deckofcardsapi.domain.Card;
 import com.icantremembernumbers.deckofcardsapi.domain.Constants;
 import com.icantremembernumbers.deckofcardsapi.domain.Deck;
 import com.icantremembernumbers.deckofcardsapi.service.DeckService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,6 +23,11 @@ public class DeckApi {
 
     @GetMapping("/new/shuffle")
     public Map<String, String> getNewShuffledDeck() {
+        // Using a volatile variable and resetting multiple times since it'll be the same value regardless of how many
+        // times it's set.
+        if (service.baseUrl == null)
+            service.baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toString();
+
         final Deck shuffledDeck = this.service.createAndReturnDeck(true);
         return Map.of(Constants.STATUS, "success",
                 Constants.SHUFFLED, "true",
@@ -44,30 +50,34 @@ public class DeckApi {
         return this.service.shuffleDeck(deckId);
     }
 
-    @GetMapping("/{deckId}/pile/")
+
+    /*
+        Pile Methods
+     */
+    @GetMapping("/{deckId}/pile")
     public Map<String, Object> allPiles(@PathVariable String deckId) {
         return this.service.allPiles(deckId);
     }
-    @GetMapping("/{deckId}/pile/{pileName}/add/")
+
+    @GetMapping("/{deckId}/pile/{pileName}/add")
     public Map<String, Object> addPile(@PathVariable String deckId, @PathVariable String pileName, @RequestParam(required = false) Optional<String> cards) {
         return this.service.addPileToDeck(deckId, pileName, cards, false);
     }
 
-    @GetMapping("/{deckId}/pile/{pileName}/shuffle/")
+    @GetMapping("/{deckId}/pile/{pileName}/shuffle")
     public Map<String, Object> shuffleDeck(@PathVariable String deckId, @PathVariable String pileName) {
-        return this.service.shufflePile(deckId,pileName);
+        return this.service.shufflePile(deckId, pileName);
     }
 
+    @GetMapping("/{deckId}/pile/{pileName}/peek")
+    public Map<String, Object> peekPileCard(@PathVariable String deckId, @PathVariable String pileName, @RequestParam(required = false) Optional<Integer> count) {
+        return this.service.peekPile(deckId, pileName, count);
+    }
+
+    @GetMapping("/{deckId}/pile/{pileName}/draw")
+    public Map<String, Object> drawPileCard(@PathVariable String deckId, @PathVariable String pileName, @RequestParam(required = false) Optional<Integer> count) {
+//        System.out.println(ServletUriComponentsBuilder.fromCurrentContextPath().build().toString());
+        return this.service.drawPile(deckId, pileName, count);
+    }
 }
 
-
-/*
-public void init() {
-        BASE_URL = format("http://localhost:%d/api/deck/", port);
-        URL_NEW = BASE_URL + "new/shuffle";
-        URL_DRAW = BASE_URL + "%s/draw?count=%d";
-        URL_SHUFFLE = BASE_URL + "%s/shuffle";
-        URL_PEEK = BASE_URL + "%s/peek";
-        URL_ADD_PILE = BASE_URL + "/%s/pile/%s/add/";
-    }
- */

@@ -31,6 +31,8 @@ class DeckApiTest {
     String URL_PEEK;// = BASE_URL + "%s/peek";
     String URL_ADD_PILE;// = BASE_URL + "%s/peek";
     String URL_ALL_PILES;// = BASE_URL + "%s/peek";
+    String URL_DRAW_PILE;
+    String URL_PEEK_PILE;
 
     @BeforeEach
     public void init() {
@@ -40,6 +42,8 @@ class DeckApiTest {
         URL_SHUFFLE = BASE_URL + "%s/shuffle";
         URL_PEEK = BASE_URL + "%s/peek";
         URL_ADD_PILE = BASE_URL + "/%s/pile/%s/add/";
+        URL_DRAW_PILE = BASE_URL + "/%s/pile/%s/draw/";
+        URL_PEEK_PILE = BASE_URL + "/%s/pile/%s/peek/";
         URL_ALL_PILES = BASE_URL + "/%s/pile/";
     }
 
@@ -127,16 +131,26 @@ class DeckApiTest {
         assertThat(pileNames).contains(pile_name, Deck.REMAINING_CARDS, Deck.DISCARDED_CARDS);
 
     }
-}
-/*
-{
-    "success": true,
-    "deck_id": "3p40paa87x90",
-    "remaining": 12,
-    "piles": {
-        "discard": {
-            "remaining": 2
-        }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testPeekAddDrawOnPile() {
+        // New Deck
+        Map<String, Object> newDeck = this.restTemplate.getForObject(URL_NEW, Map.class);
+
+        // Add Pile to it
+        String pile_name = "new_pile_name";
+        final Map<String, Object> pileResults = (Map<String, Object>) restTemplate.getForObject(format(URL_ADD_PILE, newDeck.get(Constants.DECK_ID), pile_name), Map.class);
+        // Peek Top Card of pile
+        final Map<String, Object> pilePeekResults = (Map<String, Object>) restTemplate.getForObject(format(URL_PEEK_PILE, newDeck.get(Constants.DECK_ID), pile_name), Map.class);
+        Map<String, Object> peekPileMap = (Map<String, Object>) pilePeekResults.get(pile_name);
+        List<Card> peekCards = (List<Card>) peekPileMap.get(Constants.CARDS);
+
+        // Draw Top Card of Pile
+        final Map<String, Object> pileDrawResults = (Map<String, Object>) restTemplate.getForObject(format(URL_DRAW_PILE, newDeck.get(Constants.DECK_ID), pile_name), Map.class);
+        Map<String, Object> drawPileMap = (Map<String, Object>) pileDrawResults.get(pile_name);
+        List<Card> drawCards = (List<Card>) drawPileMap.get(Constants.CARDS);
+        assertEquals(peekCards.get(0), drawCards.get(0));
+
     }
 }
- */
